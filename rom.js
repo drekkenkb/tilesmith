@@ -50,8 +50,11 @@ export function fixChecksum(rom) {
   const ascii = (o, len) => String.fromCharCode(...rom.subarray(o, o + len));
 
   if (n > 0x200 && ascii(0x100, 16).includes("SEGA")) {
+    // The checksum covers up to the ROM end address in the header, which can be short of the file's end.
+    const end = ((rom[0x1a4] << 24 | rom[0x1a5] << 16 | rom[0x1a6] << 8 | rom[0x1a7]) >>> 0) + 1;
+    const to = end > 0x200 && end < n ? end : n;
     let sum = 0;
-    for (let i = 0x200; i < n; i += 2) sum = (sum + (rom[i] << 8) + (rom[i + 1] || 0)) & 0xffff;
+    for (let i = 0x200; i < to; i += 2) sum = (sum + (rom[i] << 8) + (rom[i + 1] || 0)) & 0xffff;
     rom[0x18e] = sum >> 8; rom[0x18f] = sum & 0xff;
     return "Genesis checksum updated.";
   }

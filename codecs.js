@@ -13,6 +13,7 @@ const snesPlanes = (y, p) => (p >> 1) * 16 + 2 * y + (p & 1);
 export const FORMATS = [
   planar("nes", "NES 2bpp", 2, (y, p) => y + 8 * p),
   planar("gb", "Game Boy / SNES 2bpp", 2, (y, p) => 2 * y + p),
+  planar("snes3", "SNES 3bpp", 3, (y, p) => p < 2 ? 2 * y + p : 16 + y),
   planar("snes4", "SNES / PC Engine 4bpp", 4, snesPlanes),
   planar("snes8", "SNES 8bpp", 8, snesPlanes),
   planar("sms", "Master System / Game Gear 4bpp", 4, (y, p) => 4 * y + p),

@@ -30,7 +30,7 @@ function defaultPalette(f) {
   if (f.id === "nes") return [0x000000, 0x0058f8, 0xfca044, 0xfcfcfc];
   if (f.id === "gb") return [0xe0f8d0, 0x88c070, 0x346856, 0x081820];
   if (f.bpp === 1) return [0x000000, 0xffffff];
-  if (f.bpp === 4) return PICO8.slice();
+  if (f.bpp <= 4) return PICO8.slice(0, 1 << f.bpp);
   return Array.from({ length: 256 }, (_, i) => i < 16 ? PICO8[i] : i * 0x010101);
 }
 
