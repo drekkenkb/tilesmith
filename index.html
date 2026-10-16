@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14161c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TileSmith">
+  <title>TileSmith</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>TileSmith</h1>
+    <span id="rom-name"></span>
+    <div class="bar-actions">
+      <label class="btn">Open ROM<input type="file" id="rom-file" hidden></label>
+      <span class="when-open">
+        <button id="undo" disabled title="Undo (Ctrl+Z)">Undo</button>
+        <button id="redo" disabled title="Redo (Ctrl+Shift+Z)">Redo</button>
+        <button id="save" class="primary" title="Download the edited ROM">Save ROM</button>
+        <button id="ips" title="Download only your changes, as an IPS patch">IPS patch</button>
+        <button id="close">Close</button>
+      </span>
+    </div>
+  </header>
+
+  <main id="welcome">
+    <label class="open-rom" id="drop">
+      <input type="file" id="rom-file-2" hidden>
+      <span class="open-title">Open a ROM</span>
+      <span class="open-hint">Tap to choose a ROM file, or drop it here</span>
+    </label>
+    <ol class="steps">
+      <li>Open a ROM and pick the tile format (it's guessed for you).</li>
+      <li>Scroll through the ROM and select the tiles you want.</li>
+      <li>Draw on them here, or export them as a PNG, edit it in any paint program and import it back.</li>
+      <li>Save the edited ROM, or an IPS patch you can share.</li>
+    </ol>
+    <p class="note">
+      Formats: NES, Game Boy, SNES, PC Engine, Master System, Game Gear, Genesis, GBA and 1bpp.
+      Graphics a game stores compressed won't look like tiles until they're decompressed, so they can't be edited here.
+    </p>
+    <p class="note">Your ROM never leaves this device. Your work is kept in this browser until you close the ROM.</p>
+  </main>
+
+  <main id="work" hidden>
+    <aside id="side">
+      <details open id="gfx">
+        <summary>Graphics</summary>
+        <ul id="sets"></ul>
+        <p id="sets-empty" class="hint">No tilesets yet. Find graphics, or add one at an offset you know.</p>
+        <div class="btn-row">
+          <button id="scan">Find graphics</button>
+          <button id="add-set">Add…</button>
+        </div>
+        <div class="btn-row">
+          <button id="zip-export">Export all as PNGs</button>
+          <button id="zip-import">Import PNGs</button>
+        </div>
+        <p class="hint">
+          Export gives you a ZIP with one PNG per tileset, decompressed. Edit the PNGs, then import the ZIP (or the PNGs)
+          and they're compressed and written back into the ROM.
+        </p>
+      </details>
+      <details open>
+        <summary>View</summary>
+        <label class="field">Format
+          <select id="fmt"></select>
+        </label>
+        <div class="row">
+          <label class="field">Columns
+            <select id="cols"><option>4</option><option>8</option><option selected>16</option><option>32</option></select>
+          </label>
+          <label class="field">Arrange
+            <select id="layout">
+              <option value="1x1">8×8 tiles</option>
+              <option value="1x2">8×16 sprites</option>
+              <option value="2x2">16×16 blocks</option>
+              <option value="4x4">32×32 blocks</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">Offset (hex)
+          <span class="row">
+            <input id="offset" inputmode="text" autocomplete="off" spellcheck="false">
+            <button id="byte-back" title="Shift the view back one byte">−1</button>
+            <button id="byte-fwd" title="Shift the view forward one byte">+1</button>
+          </span>
+        </label>
+        <button id="jump" hidden></button>
+        <label class="check"><input type="checkbox" id="grid" checked> Show grid</label>
+        <p id="rom-info" class="hint"></p>
+      </details>
+      <details open>
+        <summary>Palette</summary>
+        <div id="pal" class="swatches"></div>
+        <p class="hint">Tap a color to change it. The palette only affects how tiles look here and in exported PNGs, not the ROM.</p>
+        <button id="pal-reset">Reset palette</button>
+      </details>
+      <details>
+        <summary>Saving</summary>
+        <label class="check"><input type="checkbox" id="fixsum" checked> Fix the header checksum</label>
+        <p class="hint">Updates the checksum in Genesis, SNES and Game Boy headers. Some Genesis games won't start if it's wrong.</p>
+      </details>
+    </aside>
+
+    <section id="view-pane">
+      <div id="set-bar" hidden>
+        <div id="set-info"></div>
+        <div class="selbar-actions">
+          <button id="set-write" class="primary">Write to ROM</button>
+          <button id="set-png">Export tileset</button>
+          <button id="set-import">Import tileset</button>
+          <button id="set-rename">Rename</button>
+          <button id="set-remove">Remove</button>
+          <button id="set-back">Back to ROM</button>
+        </div>
+      </div>
+      <div class="selbar">
+        <span id="sel-info">Tap a tile to select it</span>
+        <span class="selbar-actions">
+          <button id="sel-mode" aria-pressed="false" title="Drag on the tiles to select an area instead of scrolling">Drag to select</button>
+          <button id="edit" disabled>Edit</button>
+          <button id="export" disabled>Export PNG</button>
+          <button id="import" disabled>Import PNG</button>
+        </span>
+      </div>
+      <div id="viewer" tabindex="0"><canvas id="tiles"></canvas><div id="spacer"></div></div>
+      <div id="status"></div>
+    </section>
+  </main>
+
+  <dialog id="editor">
+    <div class="ed-head">
+      <strong>Edit tiles</strong>
+      <span id="ed-info"></span>
+      <button id="ed-done" class="primary">Done</button>
+    </div>
+    <div class="ed-tools">
+      <span class="seg">
+        <button data-tool="pen" aria-pressed="true">Pencil</button>
+        <button data-tool="fill" aria-pressed="false">Fill</button>
+        <button data-tool="pick" aria-pressed="false">Pick color</button>
+      </span>
+      <button id="ed-undo">Undo</button>
+      <button id="ed-redo">Redo</button>
+      <label class="check"><input type="checkbox" id="ed-grid" checked> Grid</label>
+    </div>
+    <div id="ed-wrap"><canvas id="ed-canvas"></canvas></div>
+    <div id="ed-pal" class="swatches"></div>
+  </dialog>
+
+  <dialog id="nes-pal">
+    <div class="ed-head"><strong>NES colors</strong><button id="nes-pal-close">Close</button></div>
+    <div id="nes-grid"></div>
+    <label class="field">Or any color <input type="color" id="nes-custom"></label>
+  </dialog>
+
+  <dialog id="add-dlg">
+    <form id="add-form" method="dialog">
+      <div class="ed-head"><strong>Add a tileset</strong></div>
+      <div class="dlg-body">
+        <label class="field">Name <input id="add-name" placeholder="Title screen, Font, …" autocomplete="off"></label>
+        <label class="field">Offset in the ROM (hex) <input id="add-off" autocomplete="off" spellcheck="false"></label>
+        <label class="field">Compression <select id="add-codec"></select></label>
+        <label class="field" id="add-len-row">Length in tiles <input id="add-len" inputmode="numeric" autocomplete="off"></label>
+        <label class="field">Tile format <select id="add-fmt"></select></label>
+        <p class="hint">
+          Fan sites like Data Crystal (datacrystal.tcrf.net) and romhacking.net list where many games keep their graphics
+          and how they're compressed.
+        </p>
+        <p id="add-err" class="err" hidden></p>
+      </div>
+      <div class="dlg-foot">
+        <button type="button" id="add-cancel">Cancel</button>
+        <button type="submit" class="primary">Add and open</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="zip-file" accept=".zip,.png,.json,application/zip,image/png" multiple hidden>
+  <input type="color" id="color-pick" class="offscreen" tabindex="-1" aria-hidden="true">
+  <input type="file" id="png-file" accept="image/png,image/gif,image/bmp,image/webp" hidden>
+  <div id="toast" role="status" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
